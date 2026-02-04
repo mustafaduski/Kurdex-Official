@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ku">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurdex | چوونەژوورەوە</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --bg: #0b0e11; --card: #1e2329; --gold: #f0b90b; --text: #eaecef; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .auth-card { background: var(--card); padding: 40px; border-radius: 15px; width: 100%; max-width: 400px; border: 1px solid #2b3139; text-align: center; }
+        .logo { color: var(--gold); font-size: 30px; font-weight: bold; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #0b0e11; border: 1px solid #474d57; color: white; border-radius: 8px; box-sizing: border-box; }
+        .btn-gold { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        .toggle-link { margin-top: 15px; font-size: 14px; color: #848e9c; cursor: pointer; }
+        .toggle-link span { color: var(--gold); }
+    </style>
+</head>
+<body>
+
+    <div class="auth-card">
+        <div class="logo">KURDEX Pro</div>
+        <h2 id="auth-title">چوونەژوورەوە</h2>
+        
+        <input type="email" id="email" placeholder="ئیمەیڵ">
+        <input type="password" id="password" placeholder="کۆدی نهێنی">
+        
+        <button class="btn-gold" id="auth-btn" onclick="handleAuth()">بچۆ ژوورەوە</button>
+        
+        <div class="toggle-link" id="toggle-auth" onclick="toggleMode()">
+            هێشتا ئەکاونتت نییە؟ <span>تۆماربە</span>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+    <script>
+        // لێرەدا کۆدی Config ی خۆت دابنێ
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCwv_kg1O3kiV4qkQjZnZHEWCrOMCH6W4",
+            authDomain: "kurdex-pro-fa38c.firebaseapp.com",
+            projectId: "kurdex-pro-fa38c",
+            storageBucket: "kurdex-pro-fa38c.firebasestorage.app",
+            messagingSenderId: "900983839878",
+            appId: "1:900983839878:web:b445bdf15aebb1a0d68507"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        let isLoginMode = true;
+
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? "چوونەژوورەوە" : "دروستکردنی ئەکاونت";
+            document.getElementById('auth-btn').innerText = isLoginMode ? "بچۆ ژوورەوە" : "تۆماربە";
+            document.getElementById('toggle-auth').innerHTML = isLoginMode ? 
+                "هێشتا ئەکاونتت نییە؟ <span>تۆماربە</span>" : "ئەکاونتت هەیە؟ <span>بچۆ ژوورەوە</span>";
+        }
+
+        async function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if(!email || !password) { alert("تکایە خانەکان پڕ بکەرەوە"); return; }
+
+            try {
+                if(isLoginMode) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    alert("بەخێرهاتیەوە!");
+                } else {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    alert("ئەکاونتەکەت دروست کرا!");
+                }
+                // دوای سەرکەوتن دەچێت بۆ لاپەڕەی سەرەکی
+                window.location.href = "index.html";
+            } catch (e) {
+                alert("هەڵە: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
