@@ -90,3 +90,12 @@
     </script>
 </body>
 </html>
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // ئەگەر بەکارهێنەر ناوی هەبوو، نیشانی بدە، ئەگەر نا ئیمەیڵەکەی نیشان بدە
+        const userName = user.displayName || user.email.split('@')[0];
+        document.getElementById('user-welcome').innerText = `بەخێربێیت، ${userName} 👋`;
+    } else {
+        window.location.href = "auth.html";
+    }
+});
