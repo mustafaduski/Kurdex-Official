@@ -3,99 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kurdex Pro | سیستمی هوشمند</title>
+    <title>Kurdex Pro | داشبۆردی فەرمی</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --main-bg: #0b0e11; --sidebar: #181a20; --gold: #f0b90b; --card: #1e2329; --text: #eaecef; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--main-bg); color: var(--text); display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; background: var(--sidebar); border-left: 1px solid #2b3139; position: fixed; right: 0; height: 100vh; }
-        .sidebar .logo { text-align: center; color: var(--gold); font-size: 24px; font-weight: bold; padding: 20px 0; }
+        
+        /* Sidebar */
+        .sidebar { width: 250px; background: var(--sidebar); border-left: 1px solid #2b3139; padding-top: 20px; position: fixed; right: 0; height: 100vh; z-index: 100; }
+        .sidebar .logo { text-align: center; color: var(--gold); font-size: 24px; font-weight: bold; margin-bottom: 30px; }
+        .sidebar a { display: block; padding: 15px 25px; color: #848e9c; text-decoration: none; transition: 0.3s; cursor: pointer; }
+        .sidebar a:hover, .sidebar a.active { background: #2b3139; color: var(--gold); border-right: 4px solid var(--gold); }
+        
+        /* Main */
         .main { margin-right: 250px; width: calc(100% - 250px); padding: 30px; }
-        .card { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid #2b3139; margin-bottom: 20px; }
+        .card { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid #2b3139; position: relative; margin-bottom: 20px; }
+        
+        /* Input & Buttons */
         input, select { width: 100%; padding: 12px; margin: 10px 0; background: #0b0e11; border: 1px solid #474d57; color: white; border-radius: 8px; box-sizing: border-box; }
-        .btn-gold { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn { padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        .btn-gold { background: var(--gold); color: black; }
+        
+        /* Auth Overlay */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--main-bg); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .auth-card { background: var(--card); padding: 40px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--gold); }
     </style>
 </head>
 <body>
 
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <div style="color:var(--gold); font-size: 28px; font-weight: bold; margin-bottom: 20px;">KURDEX Login</div>
+            <input type="email" id="login-email" placeholder="ئیمەیڵەکەت بنووسە">
+            <input type="password" id="login-pass" placeholder="کۆدی نهێنی">
+            <button class="btn btn-gold" onclick="handleLogin()">بچۆ ژوورەوە</button>
+            <p style="font-size: 12px; color: #848e9c; margin-top: 15px;">ئەگەر ئەکاونتت نییە، پەیوەندی بە مستەفا بکە</p>
+        </div>
+    </div>
+
     <div class="sidebar">
         <div class="logo">KURDEX Pro</div>
+        <a class="active"><i class="fa-solid fa-home"></i> سەرەتا</a>
+        <a onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> چوونە دەرەوە</a>
     </div>
 
     <div class="main">
-        <h2>سیستمی کڕینی تیتەر (USDT) 🚀</h2>
+        <h2 id="welcome-msg">بەخێربێیت 👋</h2>
+        
         <div class="card">
-            <h3>داخڵکردنی پارە (Deposit)</h3>
-            <label>بڕی پارە (دینار):</label>
-            <input type="number" id="amount" placeholder="بۆ نموونە: 250000">
-            
+            <h3>داواکاری کڕینی USDT</h3>
+            <label>بڕی پارە (IQD):</label>
+            <input type="number" id="order-amount" placeholder="بۆ نموونە: 50000">
             <label>ڕێگەی ناردن:</label>
-            <select id="method">
+            <select id="order-method">
                 <option value="FastPay">FastPay</option>
                 <option value="ZainCash">ZainCash</option>
-                <option value="FIB">FIB (First Iraqi Bank)</option>
+                <option value="FIB">FIB</option>
             </select>
-
-            <button class="btn-gold" id="submitBtn" onclick="processOrder()">تەواوکردنی داواکاری</button>
+            <button class="btn btn-gold" onclick="sendOrder()">ناردنی داواکاری و وەسڵ</button>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <script>
-        // کۆدە کلیلەکەی تۆ
+        // کونسێپتی فایەربەیسەکەی تۆ
         const firebaseConfig = {
             apiKey: "AIzaSyDCwv_kg1O3kiV4qkQjZnZHEWCrOMCH6W4",
             authDomain: "kurdex-pro-fa38c.firebaseapp.com",
             projectId: "kurdex-pro-fa38c",
             storageBucket: "kurdex-pro-fa38c.firebasestorage.app",
             messagingSenderId: "900983839878",
-            appId: "1:900983839878:web:b445bdf15aebb1a0d68507",
-            measurementId: "G-DXBSS5GDT3"
+            appId: "1:900983839878:web:b445bdf15aebb1a0d68507"
         };
 
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.firestore();
 
-        async function processOrder() {
-            const amount = document.getElementById('amount').value;
-            const method = document.getElementById('method').value;
-            const btn = document.getElementById('submitBtn');
+        // چاودێری کردنی باری بەکارهێنەر
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('welcome-msg').innerText = `بەخێربێیت، ${user.email.split('@')[0]} 👋`;
+            } else {
+                document.getElementById('auth-overlay').style.display = 'flex';
+            }
+        });
 
-            if(!amount) { alert("تکایە بڕی پارەکە بنووسە"); return; }
+        // چوونەژوورەوە
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+            } catch (e) {
+                alert("هەڵە لە چوونەژوورەوە: ئیمەیڵ یان کۆد هەڵەیە");
+            }
+        }
 
-            btn.innerText = "خەریکە تۆمار دەکرێت...";
-            btn.disabled = true;
+        // چوونەدەرەوە
+        function logout() { auth.signOut(); }
+
+        // ناردنی داواکاری
+        async function sendOrder() {
+            const amount = document.getElementById('order-amount').value;
+            const method = document.getElementById('order-method').value;
+            const user = auth.currentUser;
+
+            if(!amount) { alert("بڕی پارە بنووسە"); return; }
 
             try {
-                // 1. تۆمارکردن لە داتابەیس بۆ ئەوەی لای خۆت هەبێت
                 await db.collection("orders").add({
+                    user: user.email,
                     amount: amount,
                     method: method,
-                    status: "Pending",
-                    timestamp: new Date()
+                    date: new Date()
                 });
 
-                // 2. بردن بۆ واتسئەپ بۆ ناردنی وەسڵەکە
-                const msg = `سڵاو مستەفا، من داواکارییەکم نارد لە ڕێگەی Kurdex Pro:\n💰 بڕ: ${amount} IQD\n🏦 ڕێگە: ${method}\nتکایە چاوەڕێی وەسڵەکە بە...`;
+                const msg = `سڵاو مستەفا\nمن بەکارهێنەر: ${user.email}\nداواکاری کڕینم هەیە:\nبڕ: ${amount} IQD\nڕێگە: ${method}`;
                 window.location.href = `https://wa.me/9647502293413?text=${encodeURIComponent(msg)}`;
-
             } catch (e) {
-                alert("هەڵەیەک ڕوویدا: " + e.message);
-                btn.disabled = false;
-                btn.innerText = "تەواوکردنی داواکاری";
+                alert("کێشەیەک لە داتابەیس هەیە");
             }
         }
     </script>
 </body>
 </html>
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        // ئەگەر بەکارهێنەر ناوی هەبوو، نیشانی بدە، ئەگەر نا ئیمەیڵەکەی نیشان بدە
-        const userName = user.displayName || user.email.split('@')[0];
-        document.getElementById('user-welcome').innerText = `بەخێربێیت، ${userName} 👋`;
-    } else {
-        window.location.href = "auth.html";
-    }
-});
