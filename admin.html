@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ku">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurdex | پانێڵی ئەدمین</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --bg: #0b0e11; --card: #181a20; --gold: #f0b90b; --text: #eaecef; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .admin-container { max-width: 1000px; margin: auto; }
+        h1 { color: var(--gold); border-bottom: 2px solid var(--gold); padding-bottom: 10px; }
+        .order-card { background: var(--card); border: 1px solid #2b3139; padding: 20px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .order-info b { color: var(--gold); }
+        .status-btn { background: #2ebd85; border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .no-orders { text-align: center; color: #848e9c; margin-top: 50px; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <h1><i class="fa-solid fa-user-shield"></i> بەڕێوەبردنی داواکارییەکان</h1>
+        <div id="orders-list">
+            <p class="no-orders">خەریکە داواکارییەکان بار دەکرێن...</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCwv_kg1O3kiV4qkQjZnZHEWCrOMCH6W4",
+            authDomain: "kurdex-pro-fa38c.firebaseapp.com",
+            projectId: "kurdex-pro-fa38c",
+            storageBucket: "kurdex-pro-fa38c.firebasestorage.app",
+            messagingSenderId: "900983839878",
+            appId: "1:900983839878:web:b445bdf15aebb1a0d68507"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // خوێندنەوەی داواکارییەکان لە داتابەیس
+        db.collection("orders").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+            const list = document.getElementById('orders-list');
+            list.innerHTML = "";
+
+            if (snapshot.empty) {
+                list.innerHTML = '<p class="no-orders">هیچ داواکارییەک نەدۆزرایەوە.</p>';
+                return;
+            }
+
+            snapshot.forEach((doc) => {
+                const order = doc.data();
+                const card = `
+                    <div class="order-card">
+                        <div class="order-info">
+                            <p>👤 <b>بەکارهێنەر:</b> ${order.user || "نادیار"}</p>
+                            <p>💰 <b>بڕ:</b> ${order.amount} IQD</p>
+                            <p>🏦 <b>ڕێگە:</b> ${order.method}</p>
+                            <p>🕒 <b>کات:</b> ${order.timestamp ? order.timestamp.toDate().toLocaleString('ku-IQ') : 'نادیار'}</p>
+                        </div>
+                        <button class="status-btn" onclick="deleteOrder('${doc.id}')">تەواو بوو (سڕینەوە)</button>
+                    </div>
+                `;
+                list.innerHTML += card;
+            });
+        });
+
+        // سڕینەوەی داواکاری دوای جێبەجێکردن
+        function deleteOrder(id) {
+            if(confirm("ئایا دڵنیایت ئەم داواکارییە جێبەجێ کراوە؟")) {
+                db.collection("orders").doc(id).delete();
+            }
+        }
+    </script>
+</body>
+</html>
